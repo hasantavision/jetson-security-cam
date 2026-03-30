@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+python-socketio[asyncio]
+opencv-python-headless
+numpy
+onnxruntime-gpu  # aarch64 wheel for JetPack 4.6 — see README for install notes

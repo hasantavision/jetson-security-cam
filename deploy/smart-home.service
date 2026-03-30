@@ -1,0 +1,23 @@
+[Unit]
+Description=SMART Home Security System
+After=network.target nvargus-daemon.service
+Wants=nvargus-daemon.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/jetson-security-cam
+ExecStartPre=/usr/bin/jetson_clocks
+ExecStartPre=/bin/bash -c "systemctl restart nvargus-daemon && sleep 2"
+ExecStart=/usr/bin/python3 /opt/jetson-security-cam/backend/server.py --sensor-id 0 --port 8000
+ExecStartPost=/bin/bash -c "sleep 3 && DISPLAY=:0 su YOUR_USERNAME -c 'xdotool key F5' || true"
+ExecStopPost=/bin/bash -c "DISPLAY=:0 su YOUR_USERNAME -c 'xdotool key F5' || true"
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=PYTHONPATH=/home/YOUR_USERNAME/.local/lib/python3.6/site-packages
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
