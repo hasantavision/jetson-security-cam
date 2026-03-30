@@ -63,37 +63,37 @@ This felt like cheating. Like ordering fast food instead of cooking yourself. Su
 
 ## The benchmark
 
-I ran both backends 20 times on the same image of a person, measured how long each inference took, and compared:
+I ran both backends 30 times (5 warm-up) on the same image of a person, measured how long each inference took, and compared:
 
 ```
 ======================================================
-Backend A — Native TRT (.engine)
+Backend A — Native TRT (.engine, FP16)
 ======================================================
-  Load time : 48,576 ms   (48 seconds to load)
-  Median    : 278.8 ms
-  Mean      : 284.5 ms
-  Stdev     : 67.6 ms
-  Min/Max   : 179.3 / 410.3 ms
-  Est FPS   : 3.6
+  Load time : 28,511 ms   (28 seconds to load)
+  Median    : 126.9 ms
+  Mean      : 136.3 ms
+  Stdev     : 40.7 ms
+  Min/Max   : 88.3 / 246.6 ms
+  Est FPS   : 7.9
 
 ======================================================
-Backend B — ORT TRT EP (.onnx + cached engine)
+Backend B — ORT TRT EP (.onnx, INT8 + cached engine)
 ======================================================
-  Load time : 20,465 ms   (20 seconds to load)
-  Median    : 152.7 ms
-  Mean      : 157.9 ms
-  Stdev     : 20.4 ms
-  Min/Max   : 137.8 / 210.4 ms
-  Est FPS   : 6.5
+  Load time : ~20,000 ms  (20 seconds, warm cache)
+  Median    : 73.4 ms
+  Mean      : 75.3 ms
+  Stdev     : 6.8 ms
+  Min/Max   : 67.6 / 92.0 ms
+  Est FPS   : 13.6
 
 ======================================================
 Comparison
 ======================================================
-  Speedup (TRT vs ORT) : 0.55x
-  (ORT TRT EP is 1.8x faster)
+  Speedup (TRT vs ORT) : 0.58×
+  (ORT TRT EP is 1.7x faster)
 ```
 
-The "lazy" path was **1.8 times faster**. And it also loaded **2.4x faster**. And the detections were cleaner. The direct path lost on every metric.
+The "lazy" path was **1.7 times faster**. The detections were cleaner too. The direct path lost on every metric.
 
 I stared at this for a while.
 
@@ -143,11 +143,11 @@ ORT TRT EP detections: 4 boxes (clean)
 Look at the standard deviations:
 
 ```
-Native TRT : stdev = 67.6 ms  (huge)
-ORT TRT EP : stdev = 20.4 ms  (3x more consistent)
+Native TRT : stdev = 40.7 ms  (large)
+ORT TRT EP : stdev = 6.8 ms   (6x more consistent)
 ```
 
-Native TRT ranged from 179ms to 410ms — more than 2x spread. That means some frames take 410ms which is noticeable lag. ORT TRT EP ranged from 138ms to 210ms. Much more predictable.
+Native TRT ranged from 88ms to 247ms — nearly 3x spread. That means some frames take 247ms which is noticeable lag. ORT TRT EP ranged from 68ms to 92ms. Much more predictable.
 
 For a live camera system, consistency matters more than raw peak speed. A detector that takes 153ms every time feels smoother than one averaging 279ms with wild swings.
 
@@ -167,7 +167,7 @@ One more thing: I wanted the server to start fast. "Pre-building" the TRT engine
 
 Here's what "pre-built" actually means for each backend:
 
-**Native TRT**: compile with `trtexec` → save `.engine` file. Load time on Nano: **~48 seconds** (deserializing the engine into CUDA memory).
+**Native TRT**: compile with `trtexec` → save `.engine` file. Load time on Nano: **~28 seconds** (deserializing the engine into CUDA memory).
 
 **ORT TRT EP**: first run compiles and saves a cache automatically (the `TensorrtExecutionProvider_TRTKernel_*.engine` files in your model dir). Load time on Nano with warm cache: **~20 seconds**.
 
@@ -213,12 +213,12 @@ The pre-build script is at [`backend/prebuild_ort_cache.py`](../backend/prebuild
 
 | | Native TRT | ORT TRT EP |
 |---|---|---|
-| Median inference | 279 ms | **153 ms** |
-| Estimated FPS | 3.6 | **6.5** |
-| Latency stdev | 67.6 ms | **20.4 ms** |
-| Load time (cached) | 48 s | **20 s** |
+| Median inference | 126.9 ms | **73.4 ms** |
+| Estimated FPS | 7.9 | **13.6** |
+| Latency stdev | 40.7 ms | **6.8 ms** |
+| Load time (cached) | 28 s | **20 s** |
 | Detection quality | Duplicates | **Clean** |
 | NMS runs on | TRT (GPU) | **CPU (fast here)** |
 
 Hardware: Jetson Nano, JetPack R32.7.1, TensorRT 8.2.0, onnxruntime-gpu, Python 3.6.9.
-Model: YOLOX-S body/head/hand 256×320 FP16.
+Model: Native TRT — YOLOX-S 256×320 FP16 `.engine`; ORT TRT EP — YOLOX-S 256×320 INT8 `ir8.onnx`.

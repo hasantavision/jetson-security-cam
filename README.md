@@ -50,8 +50,8 @@ Counter-intuitively, the ONNX Runtime TensorRT Execution Provider **outperforms*
 
 | Backend | Median | FPS | Consistency (stdev) |
 |---|---|---|---|
-| Native TRT `.engine` | 279 ms | 3.6 | 67.6 ms (poor) |
-| **ORT TRT EP `.onnx`** | **153 ms** | **6.5** | **20.4 ms (good)** |
+| Native TRT `.engine` (FP16) | 126.9 ms | 7.9 | 40.7 ms (poor) |
+| **ORT TRT EP `.onnx`** (INT8) | **73.4 ms** | **13.6** | **6.8 ms (good)** |
 
 ORT TRT EP runs the backbone on TRT (GPU) and NMS on CPU. On a small GPU like the Nano, launching TRT's NMS kernel costs more than sorting 60 boxes on the CPU. Full explanation: [`docs/why-ort-trt-ep-beats-native-trt.md`](docs/why-ort-trt-ep-beats-native-trt.md).
 
