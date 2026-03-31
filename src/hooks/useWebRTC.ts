@@ -145,7 +145,7 @@ export function useWebRTC(videoRef: React.RefObject<HTMLVideoElement | null>) {
     socket.on('offer', async (sdp: string) => {
       setStatus('negotiating')
       await pc.setRemoteDescription({ type: 'offer', sdp })
-      const answer = await pc.createAnswer()
+      const answer = await pc.createAnswer({ offerToReceiveAudio: false })
       await pc.setLocalDescription(answer)
       socket.emit('answer', answer.sdp)
     })

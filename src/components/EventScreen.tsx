@@ -47,6 +47,7 @@ export default function EventScreen({ eventType }: Props) {
     if (!config.avatarVoiceEnabled || !('speechSynthesis' in window)) return
 
     window.speechSynthesis.cancel()
+    window.speechSynthesis.resume()  // Chrome Linux bug: cancel() leaves synth paused
     const u   = new SpeechSynthesisUtterance(text)
     u.rate    = 0.95
     u.pitch   = 0.9
