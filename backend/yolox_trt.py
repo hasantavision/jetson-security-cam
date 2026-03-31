@@ -272,7 +272,9 @@ class YOLOXBodyHeadHand:
     Parameters
     ----------
     model_path        : .engine (native TRT) or .onnx (ORT TRT EP)
-    score_threshold   : minimum confidence to keep a detection (default 0.40)
+    score_threshold   : minimum confidence to keep a detection (default 0.80)
+    allowed_classes   : list of class IDs to keep; None means all classes
+                        (0=body, 1=head/face, 2=hand)
     fp16              : for ORT EP only — enable FP16 kernel (default True)
     engine_cache_dir  : ORT EP engine cache dir (defaults to model dir)
     """
@@ -280,11 +282,13 @@ class YOLOXBodyHeadHand:
     def __init__(
         self,
         model_path: str,
-        score_threshold: float = 0.40,
+        score_threshold: float = 0.80,
+        allowed_classes: Optional[List[int]] = None,
         fp16: bool = True,
         engine_cache_dir: Optional[str] = None,
     ) -> None:
         self.score_threshold = score_threshold
+        self.allowed_classes = allowed_classes  # None = all classes
         ext = os.path.splitext(model_path)[1].lower()
 
         if ext == ".engine":
@@ -331,7 +335,10 @@ class YOLOXBodyHeadHand:
             score   : float (0–1)
             x1, y1, x2, y2 : float (0–1, normalised to input frame size)
         """
-        return self._backend.infer(image_bgr, self.score_threshold)
+        results = self._backend.infer(image_bgr, self.score_threshold)
+        if self.allowed_classes is not None:
+            results = [d for d in results if d["classid"] in self.allowed_classes]
+        return results
 
     def draw(
         self, bgr_frame: np.ndarray, detections: List[Dict[str, Any]]

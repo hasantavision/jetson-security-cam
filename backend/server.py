@@ -47,6 +47,22 @@ import uvicorn
 BASE_DIR    = Path(__file__).parent
 DIST_DIR    = BASE_DIR.parent / "dist"
 CONFIG_FILE = BASE_DIR / "config.json"
+ENV_FILE    = BASE_DIR / ".env"
+
+
+def _load_env_file() -> None:
+    """Parse backend/.env and populate os.environ (existing vars take priority)."""
+    if not ENV_FILE.exists():
+        return
+    for line in ENV_FILE.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        os.environ.setdefault(key.strip(), val.strip())
+
+
+_load_env_file()
 
 
 # ── Persisted configuration ───────────────────────────────────────────────────
@@ -65,7 +81,8 @@ _DEFAULT_CONFIG = {
     "i2c_bus":          7,
     # ── YOLO detection ────────────────────────────────────────────────────────
     "yolo_enabled":     True,
-    "yolo_threshold":   0.40,
+    "yolo_threshold":   0.80,
+    "yolo_classes":     [0, 1],   # 0=body  1=head/face  2=hand
     # Path is relative to the project root (00_SMART/) — can be overridden
     "yolo_engine":      "models/yolox_s_body_head_hand_post_0299_0.4983_1x3x256x320_ir8.onnx",
 }
@@ -83,6 +100,12 @@ def save_config() -> None:
 
 
 load_config()
+
+# Apply environment-variable overrides (env vars win over config.json)
+if "YOLO_THRESHOLD" in os.environ:
+    cfg["yolo_threshold"] = float(os.environ["YOLO_THRESHOLD"])
+if "YOLO_CLASSES" in os.environ:
+    cfg["yolo_classes"] = [int(c) for c in os.environ["YOLO_CLASSES"].split(",")]
 
 
 # ── asyncio loop reference ─────────────────────────────────────────────────────
@@ -591,7 +614,8 @@ def _yolo_init() -> None:
         from yolox_trt import YOLOXBodyHeadHand
         model = YOLOXBodyHeadHand(
             engine_path,
-            score_threshold=cfg.get("yolo_threshold", 0.40),
+            score_threshold=cfg.get("yolo_threshold", 0.80),
+            allowed_classes=cfg.get("yolo_classes"),
         )
         with _yolo_lock:
             _yolo_model = model
