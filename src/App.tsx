@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { useAppStore } from './stores/configStore'
+import { useAppStore, AppConfig } from './stores/configStore'
 import { onDetectionsUpdate } from './hooks/useWebRTC'
 import IdleScreen from './components/IdleScreen'
 import EventScreen from './components/EventScreen'
@@ -8,11 +8,12 @@ import BackgroundEffects from './components/BackgroundEffects'
 import CameraView from './components/CameraView'
 
 function App() {
-  const { isEventActive, currentEvent, config, clearEvent, triggerEvent, showAdmin, toggleAdmin } = useAppStore()
+  const { isEventActive, currentEvent, config, updateConfig, clearEvent, triggerEvent, showAdmin, toggleAdmin } = useAppStore()
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
   const faceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const faceSeenRef = useRef(false)
+  const serverLoadedRef = useRef(false)
 
   const resetIdleTimer = useCallback(() => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
@@ -20,6 +21,35 @@ function App() {
       clearEvent()
     }, config.idleTimeoutSeconds * 1000)
   }, [config.idleTimeoutSeconds, clearEvent])
+
+  // Load trigger mode from backend on startup (survives browser restarts)
+  useEffect(() => {
+    fetch('/api/config')
+      .then(r => r.json())
+      .then((d: Record<string, unknown>) => {
+        const update: Partial<AppConfig> = {}
+        if (d.event_trigger_mode === 'motion' || d.event_trigger_mode === 'ai')
+          update.eventTriggerMode = d.event_trigger_mode
+        if (typeof d.face_track_seconds === 'number')
+          update.faceTrackSeconds = d.face_track_seconds
+        if (Object.keys(update).length) updateConfig(update)
+      })
+      .catch(() => {})
+      .finally(() => { serverLoadedRef.current = true })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save trigger mode to backend whenever it changes (after initial load)
+  useEffect(() => {
+    if (!serverLoadedRef.current) return
+    fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_trigger_mode: config.eventTriggerMode,
+        face_track_seconds: config.faceTrackSeconds,
+      }),
+    }).catch(() => {})
+  }, [config.eventTriggerMode, config.faceTrackSeconds])
 
   // AI face-tracking trigger
   useEffect(() => {

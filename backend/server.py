@@ -79,6 +79,9 @@ _DEFAULT_CONFIG = {
     "zone":             {"x": 0.1, "y": 0.1, "width": 0.8, "height": 0.8},
     "focus":            500,
     "i2c_bus":          7,
+    # ── Frontend trigger mode ─────────────────────────────────────────────────
+    "event_trigger_mode": "motion",   # 'motion' | 'ai'
+    "face_track_seconds": 3,
     # ── YOLO detection ────────────────────────────────────────────────────────
     "yolo_enabled":     True,
     "yolo_threshold":   0.80,
