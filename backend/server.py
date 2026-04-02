@@ -82,6 +82,24 @@ _DEFAULT_CONFIG = {
     # ── Frontend trigger mode ─────────────────────────────────────────────────
     "event_trigger_mode": "motion",   # 'motion' | 'ai'
     "face_track_seconds": 3,
+    # ── Frontend UI config ───────────────────────────────────────────────────
+    "home_number":          "A1",
+    "family_members":       [
+        {"id": "1", "name": "Hasanuddin"},
+        {"id": "2", "name": "Dwilaras Athina"},
+        {"id": "3", "name": "Azhar"},
+        {"id": "4", "name": "Zayn"},
+    ],
+    "event_messages":       [
+        {"trigger": "motion",  "message": "Motion detected at the front door. Monitoring the area."},
+        {"trigger": "person",  "message": "A person has been detected near the entrance. Stay alert."},
+        {"trigger": "package", "message": "It looks like a package has been delivered at the door."},
+        {"trigger": "unknown", "message": "An unrecognized activity has been detected. Please check."},
+    ],
+    "idle_timeout_seconds": 30,
+    "camera_enabled":       True,
+    "avatar_voice_enabled": True,
+    "theme":                "blue",
     # ── YOLO detection ────────────────────────────────────────────────────────
     "yolo_enabled":     True,
     "yolo_threshold":   0.80,

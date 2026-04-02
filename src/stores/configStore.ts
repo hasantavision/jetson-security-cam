@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
 export interface FamilyMember {
   id: string
@@ -66,21 +65,18 @@ const defaultConfig: AppConfig = {
 }
 
 export const useAppStore = create<AppState>()(
-  persist(
-    (set) => ({
-      config: defaultConfig,
-      isEventActive: false,
-      currentEvent: null,
-      showAdmin: false,
-      updateConfig: (partial) =>
-        set((state) => ({ config: { ...state.config, ...partial } })),
-      triggerEvent: (eventType) =>
-        set({ isEventActive: true, currentEvent: eventType }),
-      clearEvent: () =>
-        set({ isEventActive: false, currentEvent: null }),
-      toggleAdmin: () =>
-        set((state) => ({ showAdmin: !state.showAdmin })),
-    }),
-    { name: 'smart-home-config-v2' }
-  )
+  (set) => ({
+    config: defaultConfig,
+    isEventActive: false,
+    currentEvent: null,
+    showAdmin: false,
+    updateConfig: (partial) =>
+      set((state) => ({ config: { ...state.config, ...partial } })),
+    triggerEvent: (eventType) =>
+      set({ isEventActive: true, currentEvent: eventType }),
+    clearEvent: () =>
+      set({ isEventActive: false, currentEvent: null }),
+    toggleAdmin: () =>
+      set((state) => ({ showAdmin: !state.showAdmin })),
+  })
 )
